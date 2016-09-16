@@ -188,5 +188,191 @@ xlwt                      1.1.2                    py27_0
 xz                        5.2.2                         0  
 yaml                      0.1.6                         0  
 zlib                      1.2.8                         3  
+
+Task 2: 
+Note: This was partially done because the activity was miticulous and very lengthy. 
+
+# Script
+a = np.zeros((1, 15))
+a = np.arange(15).reshape(3,5)
+
+print a
+print a.ndim
+print a.size
+print a.shape
+print a.shape[0]
+print np.array([[1., 2., 3.], [4.,5.,6.,]])
+v = np.array([1,2])
+q = np.array([2,3])
+n = np.array([3,4])
+m = np.array([4,5])
+stacked = np.vstack([np.hstack([v, q]), np.hstack([n, m])])
+print stacked
+print a[-1]
+print a[2, 3]
+print stacked[1,:]
+print a[:1]
+print a[-2:]
+print a[0:1][:, 2:4]
+print a[np.ix_([1,2],[0,2])]
+print a[:, 1:4:2]
+print a[::2, :]
+print a[::-1, :]
+print a[:, ::-1]
+print a[np.r_[:len(a), 0]]
+print a.T
+print a.conj().T
+b = np.arange(15).reshape(5,3)
+print a.dot(b)
+print a * b.T
+print a / (b.T + 1.0)
+print a ** 2
+print (a>4)
+print np.nonzero(a> 11)
+print a[:, np.nonzero(a[:,2] > 3)[0]]
+print np.arange(1., 11.)
+print np.arange(0,9)
+print a.flatten()
+print np.zeros((3,4))
+print np.zeros((3,4,5))
+print np.ones((3,4))
+print np.eye(3)
+print np.diag(a)
+print np.diag(a, 0)
+print np.random.rand(5,4)
+print np.linspace(1,9,5)
+print np.mgrid[0:9., 0:6]
+
+# Output
+[[ 0  1  2  3  4]
+ [ 5  6  7  8  9]
+ [10 11 12 13 14]]
+2
+15
+(3, 5)
+3
+[[ 1.  2.  3.]
+ [ 4.  5.  6.]]
+[[1 2 2 3]
+ [3 4 4 5]]
+[10 11 12 13 14]
+13
+[3 4 4 5]
+[[0 1 2 3 4]]
+[[ 5  6  7  8  9]
+ [10 11 12 13 14]]
+[[2 3]]
+[[ 5  7]
+ [10 12]]
+[[ 1  3]
+ [ 6  8]
+ [11 13]]
+[[ 0  1  2  3  4]
+ [10 11 12 13 14]]
+[[10 11 12 13 14]
+ [ 5  6  7  8  9]
+ [ 0  1  2  3  4]]
+[[ 4  3  2  1  0]
+ [ 9  8  7  6  5]
+ [14 13 12 11 10]]
+[[ 0  1  2  3  4]
+ [ 5  6  7  8  9]
+ [10 11 12 13 14]
+ [ 0  1  2  3  4]]
+[[ 0  5 10]
+ [ 1  6 11]
+ [ 2  7 12]
+ [ 3  8 13]
+ [ 4  9 14]]
+[[ 0  5 10]
+ [ 1  6 11]
+ [ 2  7 12]
+ [ 3  8 13]
+ [ 4  9 14]]
+[[ 90 100 110]
+ [240 275 310]
+ [390 450 510]]
+[[  0   3  12  27  48]
+ [  5  24  49  80 117]
+ [ 20  55  96 143 196]]
+[[ 0.          0.25        0.28571429  0.3         0.30769231]
+ [ 2.5         1.2         0.875       0.72727273  0.64285714]
+ [ 3.33333333  1.83333333  1.33333333  1.08333333  0.93333333]]
+[[  0   1   4   9  16]
+ [ 25  36  49  64  81]
+ [100 121 144 169 196]]
+[[False False False False False]
+ [ True  True  True  True  True]
+ [ True  True  True  True  True]]
+(array([2, 2, 2]), array([2, 3, 4]))
+[[ 1  2]
+ [ 6  7]
+ [11 12]]
+[  1.   2.   3.   4.   5.   6.   7.   8.   9.  10.]
+[0 1 2 3 4 5 6 7 8]
+[ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14]
+[[ 0.  0.  0.  0.]
+ [ 0.  0.  0.  0.]
+ [ 0.  0.  0.  0.]]
+[[[ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]]
+
+ [[ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]]
+
+ [[ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]
+  [ 0.  0.  0.  0.  0.]]]
+[[ 1.  1.  1.  1.]
+ [ 1.  1.  1.  1.]
+ [ 1.  1.  1.  1.]]
+[[ 1.  0.  0.]
+ [ 0.  1.  0.]
+ [ 0.  0.  1.]]
+[ 0  6 12]
+[ 0  6 12]
+[[ 0.71495127  0.26944766  0.63765697  0.21562208]
+ [ 0.27989592  0.04276152  0.24996509  0.82447833]
+ [ 0.28670426  0.93043583  0.89702219  0.92850914]
+ [ 0.40774586  0.63096233  0.70683138  0.56094226]
+ [ 0.38645777  0.66895346  0.28924643  0.64798422]]
+[ 1.  3.  5.  7.  9.]
+[[[ 0.  0.  0.  0.  0.  0.]
+  [ 1.  1.  1.  1.  1.  1.]
+  [ 2.  2.  2.  2.  2.  2.]
+  [ 3.  3.  3.  3.  3.  3.]
+  [ 4.  4.  4.  4.  4.  4.]
+  [ 5.  5.  5.  5.  5.  5.]
+  [ 6.  6.  6.  6.  6.  6.]
+  [ 7.  7.  7.  7.  7.  7.]
+  [ 8.  8.  8.  8.  8.  8.]]
+
+ [[ 0.  1.  2.  3.  4.  5.]
+  [ 0.  1.  2.  3.  4.  5.]
+  [ 0.  1.  2.  3.  4.  5.]
+  [ 0.  1.  2.  3.  4.  5.]
+  [ 0.  1.  2.  3.  4.  5.]
+  [ 0.  1.  2.  3.  4.  5.]
+  [ 0.  1.  2.  3.  4.  5.]
+  [ 0.  1.  2.  3.  4.  5.]
+  [ 0.  1.  2.  3.  4.  5.]]]
+
+Task 3:
+stock photo
+
+Task 4:
+Relu vs. Leaky Relu
+
+Task 5:
 https://bitbucket.org/cheongcano/
+
+Task 6:
+Void Return Value
+
+Task 7:
 Bad Coding Habit: I tend to turn routines that are only called once into subroutines. I've been told this is an unnecessary layer of abstraction and I should only look to modularize code that can needs to be used more than once. To improve on this, I should better plan out what needs to be used more than once and thus, what needs to be turned into a subroutine. 
