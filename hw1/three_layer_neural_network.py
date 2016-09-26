@@ -73,10 +73,15 @@ class NeuralNetwork(object):
         :param type: Tanh, Sigmoid, or ReLU
         :return: activations
         '''
+        if type == 'tanh':
+            return np.tanh(z)
+        if type == 'sigmoid':
+            return 1.0 / (1 + np.exp(-z))
+        if type == 'relu':
+            return np.where(z > 0, z, 0)
+        else:
+            raise("couldn't match for type: " + type)
 
-        # YOU IMPLMENT YOUR actFun HERE
-
-        return None
 
     def diff_actFun(self, z, type):
         '''
@@ -85,10 +90,16 @@ class NeuralNetwork(object):
         :param type: Tanh, Sigmoid, or ReLU
         :return: the derivatives of the activation functions wrt the net input
         '''
+        if type == 'tanh':
+            # return 1.0 - np.tan(z) ** 2
+            return 2.0 / (np.exp(z) + np.exp(-z))
+        if type == 'sigmoid':
+            return np.exp(z) / (np.exp(z) + 1) ** 2
+        if type == 'relu':
+            result = np.where(z > 0, 1, 0)
+            # print "result shape: " + str(result.shape)
+            return result
 
-        # YOU IMPLEMENT YOUR diff_actFun HERE
-
-        return None
 
     def feedforward(self, X, actFun):
         '''
@@ -101,12 +112,12 @@ class NeuralNetwork(object):
 
         # YOU IMPLEMENT YOUR feedforward HERE
 
-        # self.z1 =
-        # self.a1 =
-        # self.z2 =
+        self.z1 = X.dot(self.W1) + self.b1
+        self.a1 = actFun(self.z1)
+        self.z2 = self.a1.dot(self.W2) + self.b2
         exp_scores = np.exp(self.z2)
         self.probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
-        return None
+
 
     def calculate_loss(self, X, y):
         '''
@@ -121,8 +132,9 @@ class NeuralNetwork(object):
 
         # YOU IMPLEMENT YOUR CALCULATION OF THE LOSS HERE
 
-        # data_loss =
+        y_expanded = np.vstack((np.logical_not(y.astype(bool)).astype(int), y)).T
 
+        data_loss = np.sum(y_expanded * np.log(self.probs))
         # Add regulatization term to loss (optional)
         data_loss += self.reg_lambda / 2 * (np.sum(np.square(self.W1)) + np.sum(np.square(self.W2)))
         return (1. / num_examples) * data_loss
@@ -148,11 +160,35 @@ class NeuralNetwork(object):
         num_examples = len(X)
         delta3 = self.probs
         delta3[range(num_examples), y] -= 1
-        # dW2 = dL/dW2
-        # db2 = dL/db2
-        # dW1 = dL/dW1
-        # db1 = dL/db1
+        # print "delta3 shape: " + str(delta3.shape)
+        # print "probs shape: " + str(self.probs.shape)
+        # print "W1 shape: " + str(self.W1.shape)
+        # Confused here. Why are we using a1?
+        dW2, db2, dx2 = self.affine_backwards(delta3, self.a1, self.W2)
+
+        # print "W2 shape: " + str(self.W2.shape)
+        # print "z2 shape: " + str(self.z2.shape)
+        # print "a1 shape: " + str(self.a1.shape)
+        # print "db2 shape: " + str(db2.shape)
+        # delta2 = dx2 * self.diff_actFun(self.z1, self.actFun_type)
+
+        # print "delta2 shape: " + str(delta2.shape)
+        dW1, db1, _ = self.affine_backwards(dx2, self.diff_actFun(X, self.actFun_type), self.W1)
+
         return dW1, dW2, db1, db2
+
+    def affine_backwards(self, delta, x, W):
+        """
+        Perform a backwards pass over an affine layer
+        :param delta: delta of the layer in front
+        :param x: input into the layer
+        :return: dW, db, and delta for this level
+        """
+        db = np.sum(delta, axis=0)
+        dW = x.T.dot(delta)
+        dx = delta.dot(W.T)
+        return dW, db, dx
+
 
     def fit_model(self, X, y, epsilon=0.01, num_passes=20000, print_loss=True):
         '''
@@ -167,6 +203,7 @@ class NeuralNetwork(object):
         for i in range(0, num_passes):
             # Forward propagation
             self.feedforward(X, lambda x: self.actFun(x, type=self.actFun_type))
+            # self.feedforward(X, 'tanh')
             # Backpropagation
             dW1, dW2, db1, db2 = self.backprop(X, y)
 
@@ -196,13 +233,13 @@ class NeuralNetwork(object):
 
 def main():
     # # generate and visualize Make-Moons dataset
-    # X, y = generate_data()
+    X, y = generate_data()
     # plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
     # plt.show()
 
-    # model = NeuralNetwork(nn_input_dim=2, nn_hidden_dim=3 , nn_output_dim=2, actFun_type='tanh')
-    # model.fit_model(X,y)
-    # model.visualize_decision_boundary(X,y)
+    model = NeuralNetwork(nn_input_dim=2, nn_hidden_dim=3 , nn_output_dim=2, actFun_type='sigmoid')
+    model.fit_model(X,y)
+    model.visualize_decision_boundary(X,y)
 
 if __name__ == "__main__":
     main()
