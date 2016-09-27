@@ -66,7 +66,8 @@ class NeuralNetwork(object):
         self.W2 = np.random.randn(self.nn_hidden_dim, self.nn_output_dim) / np.sqrt(self.nn_hidden_dim)
         self.b2 = np.zeros((1, self.nn_output_dim))
 
-    def actFun(self, z, type):
+    @staticmethod
+    def actFun(z, type):
         '''
         actFun computes the activation functions
         :param z: net input
@@ -82,8 +83,8 @@ class NeuralNetwork(object):
         else:
             raise("couldn't match for type: " + type)
 
-
-    def diff_actFun(self, z, type):
+    @staticmethod
+    def diff_actFun(z, type):
         '''
         diff_actFun computes the derivatives of the activation functions wrt the net input
         :param z: net input
@@ -91,8 +92,8 @@ class NeuralNetwork(object):
         :return: the derivatives of the activation functions wrt the net input
         '''
         if type == 'tanh':
-            # return 1.0 - np.tan(z) ** 2
-            return 2.0 / (np.exp(z) + np.exp(-z))
+            # return 2.0 / (np.exp(z) + np.exp(-z))
+            return 1.0 - np.tanh(z) ** 2
         if type == 'sigmoid':
             return np.exp(z) / (np.exp(z) + 1) ** 2
         if type == 'relu':
@@ -112,12 +113,23 @@ class NeuralNetwork(object):
 
         # YOU IMPLEMENT YOUR feedforward HERE
 
-        self.z1 = X.dot(self.W1) + self.b1
+        self.z1 = NeuralNetwork.affine_forward(X, self.W1, self.b1)
         self.a1 = actFun(self.z1)
-        self.z2 = self.a1.dot(self.W2) + self.b2
+        self.z2 = NeuralNetwork.affine_forward(self.a1, self.W2, self.b2)
+        self.get_probs(self.z2)
+
+    def get_probs(self, z):
+        """
+        Get probabilities after the last affine transformation
+        :param z: input matrix
+        :return: None, sets the probs parameter of the Neural Net
+        """
         exp_scores = np.exp(self.z2)
         self.probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
+    @staticmethod
+    def affine_forward(X, W, b):
+        return X.dot(W) + b
 
     def calculate_loss(self, X, y):
         '''
@@ -134,7 +146,7 @@ class NeuralNetwork(object):
 
         y_expanded = np.vstack((np.logical_not(y.astype(bool)).astype(int), y)).T
 
-        data_loss = np.sum(y_expanded * np.log(self.probs))
+        data_loss = -1 * np.sum(y_expanded * np.log(self.probs))
         # Add regulatization term to loss (optional)
         data_loss += self.reg_lambda / 2 * (np.sum(np.square(self.W1)) + np.sum(np.square(self.W2)))
         return (1. / num_examples) * data_loss
@@ -160,33 +172,26 @@ class NeuralNetwork(object):
         num_examples = len(X)
         delta3 = self.probs
         delta3[range(num_examples), y] -= 1
-        # print "delta3 shape: " + str(delta3.shape)
-        # print "probs shape: " + str(self.probs.shape)
-        # print "W1 shape: " + str(self.W1.shape)
-        # Confused here. Why are we using a1?
-        dW2, db2, dx2 = self.affine_backwards(delta3, self.a1, self.W2)
 
-        # print "W2 shape: " + str(self.W2.shape)
-        # print "z2 shape: " + str(self.z2.shape)
-        # print "a1 shape: " + str(self.a1.shape)
-        # print "db2 shape: " + str(db2.shape)
-        # delta2 = dx2 * self.diff_actFun(self.z1, self.actFun_type)
+        dW2, db2, dx2 = self.affine_backwards(delta3, self.a1, self.W2, self.z1, self.actFun_type)
 
-        # print "delta2 shape: " + str(delta2.shape)
-        dW1, db1, _ = self.affine_backwards(dx2, self.diff_actFun(X, self.actFun_type), self.W1)
+        dW1, db1, _ = self.affine_backwards(dx2, X, self.W1, last_layer=True)
 
         return dW1, dW2, db1, db2
 
-    def affine_backwards(self, delta, x, W):
+    @staticmethod
+    def affine_backwards(delta, x, W, prev_z=None, actFun_type=None, last_layer=False):
         """
         Perform a backwards pass over an affine layer
         :param delta: delta of the layer in front
         :param x: input into the layer
         :return: dW, db, and delta for this level
         """
-        db = np.sum(delta, axis=0)
-        dW = x.T.dot(delta)
-        dx = delta.dot(W.T)
+        db = 1. / len(x) * np.sum(delta, axis=0)
+        dW = 1. / len(x) * x.T.dot(delta)
+        dx = None
+        if not last_layer:
+            dx = delta.dot(W.T) * NeuralNetwork.diff_actFun(prev_z, actFun_type)
         return dW, db, dx
 
 
@@ -237,8 +242,8 @@ def main():
     # plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
     # plt.show()
 
-    model = NeuralNetwork(nn_input_dim=2, nn_hidden_dim=3 , nn_output_dim=2, actFun_type='sigmoid')
-    model.fit_model(X,y)
+    model = NeuralNetwork(nn_input_dim=2, nn_hidden_dim=3, nn_output_dim=2, actFun_type='tanh')
+    model.fit_model(X,y, epsilon=.001, num_passes=100000)
     model.visualize_decision_boundary(X,y)
 
 if __name__ == "__main__":
