@@ -124,7 +124,7 @@ class NeuralNetwork(object):
         :param z: input matrix
         :return: None, sets the probs parameter of the Neural Net
         """
-        exp_scores = np.exp(self.z2)
+        exp_scores = np.exp(z)
         self.probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
     @staticmethod
@@ -175,12 +175,12 @@ class NeuralNetwork(object):
 
         dW2, db2, dx2 = self.affine_backwards(delta3, self.a1, self.W2, self.z1, self.actFun_type)
 
-        dW1, db1, _ = self.affine_backwards(dx2, X, self.W1, last_layer=True)
+        dW1, db1, _ = self.affine_backwards(dx2, X, self.W1, first_layer=True)
 
         return dW1, dW2, db1, db2
 
     @staticmethod
-    def affine_backwards(delta, x, W, prev_z=None, actFun_type=None, last_layer=False):
+    def affine_backwards(delta, x, W, prev_z=None, actFun_type=None, first_layer=False):
         """
         Perform a backwards pass over an affine layer
         :param delta: delta of the layer in front
@@ -190,7 +190,7 @@ class NeuralNetwork(object):
         db = 1. / len(x) * np.sum(delta, axis=0)
         dW = 1. / len(x) * x.T.dot(delta)
         dx = None
-        if not last_layer:
+        if not first_layer:
             dx = delta.dot(W.T) * NeuralNetwork.diff_actFun(prev_z, actFun_type)
         return dW, db, dx
 
@@ -242,8 +242,8 @@ def main():
     # plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
     # plt.show()
 
-    model = NeuralNetwork(nn_input_dim=2, nn_hidden_dim=3, nn_output_dim=2, actFun_type='tanh')
-    model.fit_model(X,y, epsilon=.001, num_passes=100000)
+    model = NeuralNetwork(nn_input_dim=2, nn_hidden_dim=3, nn_output_dim=2, actFun_type='relu', reg_lambda=.001)
+    model.fit_model(X,y, epsilon=.01, num_passes=100000)
     model.visualize_decision_boundary(X,y)
 
 if __name__ == "__main__":

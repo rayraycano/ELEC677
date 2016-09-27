@@ -1,6 +1,6 @@
 # Author: Raymond
 # ELEC677 Fall 2016
-from three_layer_neural_network import NeuralNetwork
+from three_layer_neural_network import NeuralNetwork, generate_data
 import numpy as np
 from Utils import *
 
@@ -67,9 +67,12 @@ class DeepNeuralNetwork(NeuralNetwork):
         delta3 = self.probs
         delta3[range(num_examples), y] -= 1
 
-        dout = self.layers[-1].backprop(delta3, middle_layer=False)
-        for i in range(len(self.layers) - 2, -1, -1):
+        dout = delta3
+        if dout is None:
+            print "YIKES"
+        for i in range(len(self.layers) - 1, 0, -1):
             dout = self.layers[i].backprop(dout)
+        _ = self.layers[0].backprop(dout, first_layer=True)
 
     def calculate_loss(self, X, y):
         num_examples = len(X)
@@ -106,7 +109,7 @@ class DeepNeuralNetwork(NeuralNetwork):
 
     def update_weights(self, epsilon):
         for layer in self.layers:
-            layer.update_weights_and_biases(epsilon)
+            layer.update_weights_and_biases(epsilon, self.reg_lambda)
 
 
 class Layer():
@@ -124,15 +127,22 @@ class Layer():
             self.prev_z = None
 
         def feedforward(self, X, middle_layer=True):
+            self.X = X
             self.z = NeuralNetwork.affine_forward(X, self.W, self.b)
             if middle_layer:
                 self.a = NeuralNetwork.actFun(self.z, self.actFun_type)
             out = self.a if middle_layer else self.z
             return out
 
-        def backprop(self, delta_out, middle_layer=True):
-            self.dW, self.db, dX = NeuralNetwork.affine_backwards(delta_out, self.X, self.W, self.actFun_type,
-                                                                  last_layer=not middle_layer)
+        def backprop(self, delta_out, first_layer=False):
+            # if self.prev_z is None:
+            #     print "prev_z none"
+            self.dW, self.db, dX = NeuralNetwork.affine_backwards(delta_out, self.X, self.W, self.prev_z, self.actFun_type,
+                                                                  first_layer=first_layer)
+            # if dX is None:
+            #     print "NONEHERE"
+            # else:
+            #     print 'good'
             return dX
 
         def update_weights_and_biases(self, epsilon, reg):
@@ -142,4 +152,15 @@ class Layer():
 
 
 
+def main():
+    # # generate and visualize Make-Moons dataset
+    X, y = generate_data()
+    # plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
+    # plt.show()
 
+    model = DeepNeuralNetwork(nn_input_dim=2, nn_output_dim=2, num_hlayers=2, layer_sizes=[3, 3], actFun_type='tanh')
+    model.fit_model(X,y, epsilon=.01, num_passes=20000)
+    model.visualize_decision_boundary(X, y)
+
+if __name__ == "__main__":
+    main()
