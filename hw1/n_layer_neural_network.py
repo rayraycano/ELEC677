@@ -155,10 +155,8 @@ class Layer():
 def main():
     # # generate and visualize Make-Moons dataset
     X, y = generate_data()
-    # plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
-    # plt.show()
-
-    model = DeepNeuralNetwork(nn_input_dim=2, nn_output_dim=2, num_hlayers=2, layer_sizes=[3, 3], actFun_type='tanh')
+    
+    model = DeepNeuralNetwork(nn_input_dim=2, nn_output_dim=2, num_hlayers=3, layer_sizes=[3, 3, 2], actFun_type='tanh')
     model.fit_model(X,y, epsilon=.01, num_passes=20000)
     model.visualize_decision_boundary(X, y)
 
