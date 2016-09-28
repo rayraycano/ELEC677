@@ -2,3 +2,4 @@
 */.idea/*
 ./MNIST_data/*
 ./results/*
+.DS_STORE
