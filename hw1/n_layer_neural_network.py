@@ -156,8 +156,8 @@ def main():
     # # generate and visualize Make-Moons dataset
     X, y = generate_data()
     
-    model = DeepNeuralNetwork(nn_input_dim=2, nn_output_dim=2, num_hlayers=3, layer_sizes=[3, 3, 2], actFun_type='tanh')
-    model.fit_model(X,y, epsilon=.01, num_passes=20000)
+    model = DeepNeuralNetwork(nn_input_dim=2, nn_output_dim=2, num_hlayers=5, layer_sizes=[4,8,16,32,64], actFun_type='tanh')
+    model.fit_model(X,y, epsilon=.01, num_passes=50000)
     model.visualize_decision_boundary(X, y)
 
 if __name__ == "__main__":

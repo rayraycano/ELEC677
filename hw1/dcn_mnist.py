@@ -10,9 +10,9 @@ mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 # Import Tensorflow and start a session
 import tensorflow as tf
 sess = tf.InteractiveSession()
-RUN = '/run1'
+RUN = '/run_ReLU_X_adam_lr1e_4'
 
-def weight_variable(shape):
+def weight_variable(shape, name):
     '''
     Initialize weights
     :param shape: shape of weights, e.g. [w, h ,Cin, Cout] where
@@ -24,8 +24,9 @@ def weight_variable(shape):
     '''
 
     # IMPLEMENT YOUR WEIGHT_VARIABLE HERE
-    initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial)
+    initial = tf.get_variable(name=name, shape=shape, initializer=tf.contrib.layers.xavier_initializer())
+    # initial = tf.truncated_normal(shape, stddev=0.1)
+    return initial
 
 def bias_variable(shape):
     '''
@@ -66,6 +67,17 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                           strides=[1, 2, 2, 1], padding='SAME')
 
+
+def leaky_relu(X, alpha=0.1):
+    """
+    Implementation of leaky ReLU unit.
+    :param X: input vector
+    :param alpha: slope of the negative portion
+    :return:
+    """
+    return tf.maximum(X, alpha * X)
+
+
 def nn_layer(input_tensor, input_channel, output_channel, window, name):
     """
     Generalized conv layer with a convolution and nonlinearity
@@ -77,7 +89,7 @@ def nn_layer(input_tensor, input_channel, output_channel, window, name):
     :return: output of the run
     """
     add_summaries(input_tensor, name + '.input')
-    w_conv = weight_variable([window, window, input_channel, output_channel])
+    w_conv = weight_variable([window, window, input_channel, output_channel], name+'.w')
     add_summaries(w_conv, name + '.w')
     b_conv = bias_variable([output_channel])
     add_summaries(b_conv, name + '.b')
@@ -140,7 +152,7 @@ def main():
     layer_2 = nn_layer(layer_1, 32, 64, 5, 'layer_2')
 
     # densely connected layer
-    W_fc1 = weight_variable([7 * 7 * 64, 1024])
+    W_fc1 = weight_variable([7 * 7 * 64, 1024], 'wfc1')
     b_fc1 = bias_variable([1024])
     h_pool2_flat = tf.reshape(layer_2, [-1, 7*7*64])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
@@ -150,12 +162,14 @@ def main():
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob=keep_prob)
 
     # softmax
-    W_fc2 = weight_variable([1024, 10])
+    W_fc2 = weight_variable([1024, 10], 'wfc2')
     b_fc2 = bias_variable([10])
     y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
     # FILL IN THE FOLLOWING CODE TO SET UP THE TRAINING
-
+    # global_step = tf.Variable(0, trainable=False)
+    # starter_rate = 1e-1
+    # learning_rate = tf.train.exponential_decay(starter_rate, global_step, 800, .98, staircase=True)
     # setup training
     cross_entropy = tf.reduce_mean(-1 * tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
