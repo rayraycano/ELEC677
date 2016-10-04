@@ -1,0 +1,16 @@
+Extracting MNIST_data/train-images-idx3-ubyte.gz
+Extracting MNIST_data/train-labels-idx1-ubyte.gz
+Extracting MNIST_data/t10k-images-idx3-ubyte.gz
+Extracting MNIST_data/t10k-labels-idx1-ubyte.gz
+test accuracy 0.0892
+validation accuracy 0.0868
+test accuracy 0.9385
+validation accuracy 0.941
+test accuracy 0.965
+validation accuracy 0.968
+test accuracy 0.974
+validation accuracy 0.9744
+test accuracy 0.9781
+validation accuracy 0.9786
+test accuracy 0.9817
+The training takes 690.806076 second to finish
