@@ -10,7 +10,8 @@ def generate_data():
     '''
     np.random.seed(0)
 
-    X, y = datasets.make_circles(200, noise=.20)
+    # X, y = datasets.make_circles(200, noise=.20)
+    X, y = datasets.make_moons(200, noise=.2)
     return X, y
 
 def plot_decision_boundary(pred_func, X, y):
@@ -96,7 +97,7 @@ class NeuralNetwork(object):
             # return 2.0 / (np.exp(z) + np.exp(-z))
             return 1.0 - np.tanh(z) ** 2
         if type == 'sigmoid':
-            return np.exp(z) / (np.exp(z) + 1) ** 2
+            return NeuralNetwork.actFun(z, type) * (1 - NeuralNetwork.actFun(z, type))
         if type == 'relu':
             result = np.where(z > 0, 1, 0)
             # print "result shape: " + str(result.shape)
@@ -243,7 +244,7 @@ def main():
     # plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
     # plt.show()
 
-    model = NeuralNetwork(nn_input_dim=2, nn_hidden_dim=5, nn_output_dim=2, actFun_type='relu', reg_lambda=.001)
+    model = NeuralNetwork(nn_input_dim=2, nn_hidden_dim=3, nn_output_dim=2, actFun_type='sigmoid', reg_lambda=.001)
     model.fit_model(X,y, epsilon=.01, num_passes=20000)
     model.visualize_decision_boundary(X,y)
 
