@@ -10,7 +10,7 @@ mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 # Import Tensorflow and start a session
 import tensorflow as tf
 sess = tf.InteractiveSession()
-RUN = '/run_ReLU_X_adam_lr1e_4'
+RUN = '/run_LRU_adam_X_lrED_77'
 
 def weight_variable(shape, name):
     '''
@@ -93,7 +93,7 @@ def nn_layer(input_tensor, input_channel, output_channel, window, name):
     add_summaries(w_conv, name + '.w')
     b_conv = bias_variable([output_channel])
     add_summaries(b_conv, name + '.b')
-    h_conv = tf.nn.relu(conv2d(input_tensor, w_conv) + b_conv)
+    h_conv = leaky_relu(conv2d(input_tensor, w_conv) + b_conv)
     add_summaries(h_conv, name+'.activation')
     pooled = max_pool_2x2(h_conv)
     add_summaries(pooled, name+'.maxpool')
@@ -130,7 +130,7 @@ def get_accuracies(accuracy, x, y_, keep_prob):
 def main():
     # Specify training parameters
     result_dir = './results/' # directory where the results from the training are saved
-    max_step = 5500 # the maximum iterations. After max_step iterations, the training will stop no matter what
+    max_step = 7700 # the maximum iterations. After max_step iterations, the training will stop no matter what
 
     start_time = time.time() # start timing
 
@@ -155,7 +155,7 @@ def main():
     W_fc1 = weight_variable([7 * 7 * 64, 1024], 'wfc1')
     b_fc1 = bias_variable([1024])
     h_pool2_flat = tf.reshape(layer_2, [-1, 7*7*64])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+    h_fc1 = leaky_relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
     # dropout
     keep_prob = tf.placeholder(tf.float32)
@@ -167,12 +167,12 @@ def main():
     y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
     # FILL IN THE FOLLOWING CODE TO SET UP THE TRAINING
-    # global_step = tf.Variable(0, trainable=False)
-    # starter_rate = 1e-1
-    # learning_rate = tf.train.exponential_decay(starter_rate, global_step, 800, .98, staircase=True)
+    global_step = tf.Variable(0, trainable=False)
+    starter_rate = 1e-4
+    learning_rate = tf.train.exponential_decay(starter_rate, global_step, 1000, .96, staircase=True)
     # setup training
     cross_entropy = tf.reduce_mean(-1 * tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+    train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy, global_step=global_step)
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
