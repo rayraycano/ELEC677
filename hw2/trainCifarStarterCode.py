@@ -5,6 +5,7 @@ import os
 import random
 import matplotlib.pyplot as plt
 import matplotlib as mp
+import matplotlib.image as mpimg
 
 # --------------------------------------------------
 # setup
@@ -100,7 +101,10 @@ def batch_norm(x, n_out, phase_train):
         normed = tf.nn.batch_normalization(x, mean, var, beta, gamma, 1e-3)
     return normed
 
-def nn_layer(input_tensor, input_channel, output_channel, window, name):
+def leaky_relu(x, alpha=.1):
+    return tf.maximum(x, alpha * x)
+
+def nn_layer(input_tensor, input_channel, output_channel, window, name, train=tf.Variable(True)):
     """
     Generalized conv layer with a convolution and nonlinearity
     :param input_tensor: input tensor that will be multiplied with
@@ -115,9 +119,9 @@ def nn_layer(input_tensor, input_channel, output_channel, window, name):
     add_summaries(w_conv, name + '.w')
     b_conv = bias_variable([output_channel])
     add_summaries(b_conv, name + '.b')
-    h_norm = batch_norm(conv2d(input_tensor, w_conv))
+    h_norm = batch_norm(conv2d(input_tensor, w_conv), output_channel, tf_train)
     add_summaries(h_norm, name+'.batch')
-    h_conv = tf.nn.relu(h_norm + b_conv)
+    h_conv = leaky_relu(h_norm + b_conv)
     add_summaries(h_conv, name+'.activation')
     pooled = max_pool_2x2(h_conv)
     add_summaries(pooled, name+'.maxpool')
@@ -191,10 +195,12 @@ tf_data = tf.placeholder(tf.float32, shape=[None, imsize, imsize, nchannels])
 #tf variable for labels
 tf_labels = tf.placeholder(tf.float32, shape=[None, nclass])
 
+tf_train = tf.placeholder(tf.bool)
+
 # --------------------------------------------------
 # model
 #create your model
-layer1, filter = nn_layer(tf_data, nchannels, 32, 5, 'layer1')
+layer1, filterz = nn_layer(tf_data, nchannels, 32, 5, 'layer1')
 layer2, _ = nn_layer(layer1, 32, 64, 5, 'layer2')
 W_fc1 = weight_variable([7 * 7 * 64, 1024], 'wfc1')
 b_fc1 = bias_variable([1024])
@@ -213,7 +219,7 @@ y_conv = tf.nn.softmax(h_fc2)
 
 global_step = tf.Variable(0, trainable=False)
 starter_rate = 1e-4
-learning_rate = tf.train.exponential_decay(starter_rate, global_step, 500, .96, staircase=True)
+learning_rate = tf.train.exponential_decay(starter_rate, global_step, 250, .97, staircase=True)
 
 cross_entropy = tf.reduce_mean(-1 * tf.reduce_sum(tf_labels * tf.log(y_conv), reduction_indices=[1]))
 optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy, global_step=global_step)
@@ -225,7 +231,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 tf.scalar_summary(cross_entropy.op.name, cross_entropy)
 
 # Try to do a tf.split() on the filter tensor rather than transposing it
-splits = tf.split(3, 32, filter)
+splits = tf.split(3, 32, filterz)
 for i in range(len(splits)):
     if len(str(i)) == 1:
         num_str = '0' + str(i)
@@ -245,7 +251,8 @@ saver = tf.train.Saver()
 
 # Instantiate a SummaryWriter to output summaries and the Graph.
 result_dir = './results/'
-RUN = 'AdamReluEDViz1'
+RUN = 'AdamLReluED1eneg3BN'
+# RUN = 'testSum'
 train_writer = tf.train.SummaryWriter(result_dir + RUN + '/train', sess.graph)
 
 sess.run(tf.initialize_all_variables())
@@ -265,29 +272,79 @@ for i in range(2000): # try a small iteration size once it works then continue
         batch_xs[j] = Train[perm[j]]
         batch_ys[j] = LTrain[perm[j]]
 
-    summary_str = sess.run(summary_op, feed_dict={tf_data: batch_xs, tf_labels:batch_ys, keep_prob:0.5})
+    summary_str = sess.run(summary_op, feed_dict={tf_data: batch_xs, tf_labels:batch_ys, keep_prob:0.5, tf_train:True})
     train_writer.add_summary(summary_str, i)
     train_writer.flush()
 
     if i%50 == 0:
         # calculate train accuracy and print it
         train_accuracy = accuracy.eval(feed_dict={
-            tf_data: batch_xs, tf_labels: batch_ys, keep_prob: 1.0})
+            tf_data: batch_xs, tf_labels: batch_ys, keep_prob: 1.0, tf_train:False})
         print("step %d, training accuracy %f"%(i, train_accuracy))
     # if i%100 == 0:
     #     train_writer.add_summary(img_summary, i)
 
     # dropout only during training
     optimizer.run(feed_dict={tf_data:batch_xs, tf_labels:batch_ys,
-                             keep_prob:0.5})
+                             keep_prob:0.5, tf_train:True})
+
+# Adapted from https://medium.com/@awjuliani/visualizing-neural-network-layer-activation-tensorflow-tutorial-d45f8bf7bbc4#.pfea2tdvf
 # Visualize the images in the filter
+def plot_filters(filters):
+    num_filts = filters.shape[3]
+    plt.figure(1, figsize=(20, 20))
+    # splits = tf.split(3, 32, filters)
+    for i in range(num_filts):
+        plt.subplot(7, 6, i+1)
+        plt.title('Filter ' + str(i))
+        plt.imshow(filters[:,:,0,i], interpolation="nearest", cmap=plt.get_cmap('gray'))
+    plt.savefig('figures/filters')
+
+def plot_activations(activations, name=''):
+    num_acts = activations.shape[3]
+    plt.figure(1, figsize=(30,30))
+
+    print activations[0].shape
+    print activations.shape
+    for i in range(num_acts):
+        plt.subplot(7,6,i+1)
+        plt.imshow(activations[0,:,:,i], interpolation="nearest", cmap=plt.get_cmap('gray'))
+
+    if name:
+        plt.savefig(name)
+    else:
+        plt.show()
+
+
+def getActivations(layer, stimuli, name=''):
+    units = []
+    for stim in stimuli:
+        unit = layer.eval(session=sess, feed_dict={tf_data: np.reshape(stim, [1, 28, 28, 1], order='F'),
+                                                keep_prob: 1.0,
+                                                tf_train: False}) / len(stimuli)
+        units.append(unit)
+    units = np.mean(np.array(units), axis=0)
+    print(units.shape)
+    plot_activations(units, name)
+
+viz = True
+if viz:
+    eval_filters = filterz.eval(session=sess)
+    plot_filters(eval_filters)
+
+    for j in range(0, 1000, 100):
+        images = []
+        for i in range(j, j + 100, 10):
+            images.append(Test[i])
+        getActivations(layer1, images, name='figures/activations' + RUN + str(j / 100))
+    # getActivations(layer2, img)
 
 
 
 # --------------------------------------------------
 # test
 
-print("test accuracy %g"%accuracy.eval(feed_dict={tf_data: Test, tf_labels: LTest, keep_prob: 1.0}))
+print("test accuracy %g"%accuracy.eval(feed_dict={tf_data: Test, tf_labels: LTest, keep_prob: 1.0, tf_train:False}))
 
 
 sess.close()
