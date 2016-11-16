@@ -3,3 +3,4 @@
 ./MNIST_data/*
 ./results/*
 .DS_STORE
+*/figures/*
